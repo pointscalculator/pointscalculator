@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>لعبة من أكون؟</title>
+    <style>
+        /* الخطوط الأساسية والخلفية */
+        body {
+            background-color: #e0f2f7; /* أزرق فاتح جداً للخلفية الأساسية */
+            font-family: 'Inter', sans-serif; /* استخدام خط Inter */
+            color: white;
+            text-align: center;
+            margin: 0;
+            overflow: hidden; /* لمنع ظهور شريط التمرير بسبب العناصر المتساقطة */
+            position: relative; /* لتمكين الطبقات الشفافة والعناصر المتساقطة */
+            min-height: 100vh; /* لضمان أن الخلفية تغطي الشاشة بالكامل */
+            /* padding-top و padding-right سيتم تعيينهما بواسطة JavaScript */
+        }
+
+        /* الطبقة الشفافة السوداء فوق الخلفية - تم زيادة الشفافية */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.2); /* أسود أكثر شفافية */
+            z-index: 1; /* ليكون فوق الخلفية وتحت المحتوى */
+        }
+
+        /* شريط التحذير الثابت والمركزي - تم تغيير اللون الأزرق الغامق */
+        .notice-bar {
+            background-color: #385E5D; /* أزرق غامق جديد */
+            color: white;
+            padding: 10px 0;
+            font-size: 18px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed; /* أصبح ثابتًا */
+            left: 0;
+            width: 100%;
+            z-index: 10; /* ليكون فوق كل شيء */
+            text-align: center; /* لمركزة النص */
+            top: 0; /* الشريط في الأعلى تماماً */
+        }
+
+        .notice-content {
+            white-space: normal; /* السماح بالتفاف النص إذا كان طويلاً */
+            display: block; /* لجعل النص يأخذ العرض الكامل */
+            padding: 0 15px; /* مسافة داخلية للنص */
+        }
+
+        .notice-bar .red {
+            color: #ffcc00; /* لون ذهبي للملاحظة */
+            font-weight: bold;
+        }
+
+        .notice-bar .brown {
+            color: white; /* لون أبيض للنص داخل الشريط ليظهر بوضوح */
+        }
+
+        /* تنسيق الفرق */
+        .teams {
+            display: grid;
+            gap: 80px; /* زيادة التباعد بين الأعمدة والصفوف بشكل أكبر */
+            justify-items: center;
+            margin: 30px auto; /* لمركزة الفرق */
+            position: relative;
+            z-index: 2; /* ليكون فوق الطبقة الشفافة */
+            padding: 0 15px; /* مسافة داخلية على الجوانب */
+            /* grid-template-columns و max-width سيتم تعيينهما بواسطة JavaScript */
+        }
+
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* background-color سيتم تعيينه ديناميكيًا */
+            padding: 15px; /* تكبير حجم البادينج */
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            width: 100%; /* ليأخذ العرض المتاح في العمود */
+            max-width: 180px; /* تكبير أقصى عرض لكل فريق */
+            transition: background-color 0.3s ease; /* لإضافة انتقال سلس لتغيير اللون */
+        }
+
+        .team-name {
+            color: white; /* جعل لون اسم الفريق أبيض ليناسب الخلفيات الداكنة */
+            font-weight: bold;
+            font-size: 24px; /* تكبير حجم الخط */
+            margin: 8px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* أزرار النقاط - تم تغيير اللون الأزرق الفاتح */
+        .score-btn {
+            width: 120px; /* تكبير العرض */
+            height: 60px; /* تكبير الارتفاع */
+            font-size: 30px; /* تكبير حجم الخط */
+            color: #3e2723; /* لون غامق للنص داخل الزر */
+            background-color: #A8CCCB; /* أزرق فاتح جديد */
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+        }
+
+        .score-btn:hover {
+            background-color: #385E5D; /* استخدام اللون الأزرق الغامق الجديد عند التحويم */
+            transform: translateY(-3px);
+        }
+
+        .score-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* أزرار التحكم الرئيسية (إعادة تعيين وتعديل الأسماء) - تم تغيير اللون الأزرق الغامق */
+        #resetBtn, #editNamesBtn {
+            margin: 20px 10px;
+            padding: 15px 30px; /* تكبير البادينج */
+            background-color: #385E5D; /* أزرق غامق جديد */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 22px; /* تكبير حجم الخط */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        #resetBtn:hover, #editNamesBtn:hover {
+            background-color: #5B8C8B; /* لون أغمق قليلاً من الأزرق الغامق الجديد عند التحويم */
+            transform: translateY(-2px);
+        }
+
+        #resetBtn:active, #editNamesBtn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* لوحة ترتيب المراكز - تم تغيير اللون الأزرق الغامق */
+        #rankingBox {
+            position: fixed;
+            top: 0; /* تم رفعه ليصبح بمحاذاة شريط الملاحظة */
+            right: 0; /* تم لفه لليمين ليصبح في الزاوية */
+            background-color: #385E5D; /* أزرق غامق جديد */
+            padding: 30px 25px; /* تكبير البادينج لزيادة الطول، والعرض */
+            border-radius: 0 0 15px 15px; /* حواف دائرية في الأسفل فقط */
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 11; /* أعلى من شريط الملاحظة */
+            width: 150px; /* تصغير العرض قليلاً */
+            height: auto; /* ليتكيف الطول مع المحتوى */
+        }
+
+        #rankingBox h3 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #f3e5c3; /* لون فاتح للعنوان */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            text-align: center; /* محاذاة العنوان في المنتصف */
+        }
+
+        .rank {
+            margin: 8px 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* محاذاة النص في المنتصف */
+            gap: 5px; /* مسافة بين العناصر */
+        }
+
+        .rank .medal {
+            font-size: 22px;
+        }
+
+        /* النوافذ المنبثقة (Modal) */
+        .modal, .modal-player-count {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.8); /* خلفية أغمق للمودال */
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #e0f7fa; /* لون أزرق فاتح جداً لمحتوى المودال */
+            color: #000000; /* لون نص أسود بالكامل */
+            padding: 30px;
+            max-height: 85vh; /* زيادة ارتفاع المودال قليلاً */
+            overflow-y: auto;
+            width: 90%; /* عرض أكبر للمودال على الشاشات الصغيرة */
+            max-width: 600px; /* أقصى عرض للمودال */
+            border-radius: 15px;
+            text-align: right;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            line-height: 1.6; /* تحسين قابلية القراءة */
+            font-size: 18px;
+        }
+
+        .modal-content h2 {
+            font-size: 28px;
+            color: #5d4037;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            margin-bottom: 15px;
+        }
+
+        /* زر المودال - تم تغيير اللون الأزرق الغامق */
+        .modal-content button {
+            margin-top: 25px;
+            background-color: #385E5D; /* أزرق غامق جديد */
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .modal-content button:hover {
+            background-color: #5B8C8B; /* لون أغمق قليلاً من الأزرق الغامق الجديد عند التحويم */
+            transform: translateY(-2px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 32px;
+            color: #5d4037;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        /* ستايل نافذة تحديد عدد اللاعبين */
+        .modal-player-count .modal-content {
+            background-color: rgba(0, 0, 0, 0.95); /* أسود شفاف أغمق جداً */
+            color: white;
+            text-align: center;
+            padding: 40px;
+            max-width: 400px;
+        }
+
+        .modal-player-count .modal-content h2 {
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .player-count-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* أزرار اختيار عدد اللاعبين - تم تغيير الألوان */
+        .player-count-buttons button {
+            background-color: #A8CCCB; /* أزرق فاتح جديد */
+            color: #385E5D; /* أزرق غامق جديد */
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 22px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-grow: 1; /* لجعل الأزرار تتمدد بالتساوي */
+            font-weight: bold; /* لجعل الخط أغمق */
+        }
+
+        .player-count-buttons button:hover {
+            background-color: #385E5D; /* أزرق غامق جديد عند التحويم */
+            transform: translateY(-2px);
+        }
+
+        /* أيقونة الحاسبة الموزعة في الخلفية */
+        .calculator-icon {
+            position: absolute;
+            font-size: 40px; /* حجم الأيقونة */
+            color: rgba(0, 0, 0, 0.25); /* اللون أسود مع شفافية أغمق قليلاً */
+            pointer-events: none; /* لجعلها غير قابلة للتفاعل */
+            user-select: none; /* لمنع تحديدها */
+            z-index: 0; /* لتكون في الخلفية تمامًا */
+            transform: rotate(45deg); /* دوران الأيقونات لتكون جزءًا من الخط القطري */
+        }
+
+        /* استجابة التصميم للشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .notice-bar {
+                font-size: 16px;
+            }
+
+            .teams {
+                grid-template-columns: repeat(2, 1fr) !important; /* عمودين على الأجهزة اللوحية */
+                margin: 20px auto;
+                max-width: 400px !important; /* تقليل العرض الأقصى للفرق */
+                margin-right: auto !important; /* إزالة المسافة الإضافية */
+            }
+
+            .team-name {
+                font-size: 20px;
+            }
+
+            .score-btn {
+                width: 100px; /* تصغير أكثر على الجوالات */
+                height: 50px;
+                font-size: 26px;
+            }
+
+            #rankingBox {
+                position: static; /* إزالة التثبيت على الشاشات الصغيرة */
+                margin: 20px auto;
+                width: 90%;
+                max-width: 400px;
+                text-align: center;
+            }
+
+            #rankingBox h3 {
+                text-align: center;
+            }
+
+            .rank {
+                justify-content: center;
+            }
+
+            .modal-content {
+                padding: 20px;
+                font-size: 16px;
+            }
+
+            .modal-content h2 {
+                font-size: 24px;
+            }
+
+            .modal-content button {
+                font-size: 20px;
+                padding: 12px 25px;
+            }
+
+            #resetBtn, #editNamesBtn {
+                font-size: 18px;
+                padding: 10px 20px;
+            }
+
+            .player-count-buttons button {
+                font-size: 18px;
+                padding: 12px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .teams {
+                grid-template-columns: 1fr !important; /* عمود واحد على الجوالات */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="notice-bar">
+        <div class="notice-content">
+            <span class="red">ملاحظة:</span> <span class="brown">هذه النسخه لشخص واحد فقط وغير قابله للنشر او البيع ومن يخالف ذلك سيتم اتخاذ الإجراءات القانونيه في هذا الأمر وللتذكير بذمتك وأمانتك:<br>"قال ﷺ "لا إيمان لمن لا أمانة له، ولا دين لمن لا عهد له"</span>
+        </div>
+    </div>
+
+    <div class="overlay"></div>
+
+    <div id="rankingBox">
+        <h3>ترتيب المراكز:</h3>
+        <div id="ranks"></div>
+    </div>
+
+    <div class="teams" id="teamsContainer"></div>
+
+    <button id="resetBtn">إعادة تعيين</button>
+    <button id="editNamesBtn" onclick="editTeamNames()">تعديل أسماء الفرق</button>
+
+    <div class="modal-player-count" id="modalPlayerCount">
+        <div class="modal-content">
+            <h2>حدد عدد اللاعبين</h2>
+            <div class="player-count-buttons">
+                <button onclick="setPlayerCount(3)">3 فرق</button>
+                <button onclick="setPlayerCount(4)">4 فرق</button>
+                <button onclick="setPlayerCount(6)">6 فرق</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal1" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="startGame()">&times;</span>
+            <h2>نصائح اللعبة</h2>
+            <p>نصيحه علشان نلعب ونستانس… بس بدون ما ننسى الأهم 🌙<br><br>
+                1. ⏰ "اللعب ممتع، بس خلّه بعد الصلاة، عشان ما تضيع عليك لا متعة ولا أجر."<br>
+                2. 📖 "اللعبة حلوة، بس القرآن أحلى، خذ لك وقت بين الجولات وارتّح مع كلام الله."<br>
+                3. 🙏 "إذا جاء وقت الصلاة، نوقف اللعب ونكسب رضا رب العالمين."<br>
+                4. ✋ "نلعب ونضحك، لكن ما نخلي اللعب يلهينا عن طاعة الله."<br>
+                5. 📚 "اللعب ما يمنع إنك تذاكر، نظّم وقتك وخلّ اللعب مكافأة بعد الإنجاز."<br>
+                6. 🎯 "اللعبة جزء من يومنا، مو كل يومنا… لا تنسى أهدافك وطموحاتك."<br>
+                7. ⌛ "وقت المذاكرة غالي، لا تخليه يضيع على حساب جيم ممكن تلعبه بأي وقت."<br><br>
+                تذكر "إذا لعبت وانت محافظ على صلاتك واذكارك وقراءة القران وخلصت المذاكره والاشغال الي عليك … أنت كسبت الدنيا والآخرة بأذن الله"
+            </p>
+            <button onclick="startGame()">بدء اللعب</button>
+        </div>
+    </div>
+
+    <script>
+        // تعريف أسماء الفرق والنقاط الأولية (سيتم تعديل حجمها بناءً على اختيار اللاعب)
+        let teamNames = [];
+        let scores = [];
+
+        // جلب عناصر HTML
+        const container = document.getElementById('teamsContainer');
+        const ranksDiv = document.getElementById('ranks');
+        const modal1 = document.getElementById('modal1');
+        const modalPlayerCount = document.getElementById('modalPlayerCount');
+        const noticeBar = document.querySelector('.notice-bar');
+        const rankingBox = document.getElementById('rankingBox');
+
+        // الألوان الجديدة لمربعات الفرق (أغمق وأكثر تباينًا)
+        const teamColors = [
+            '#4CAF50', // أخضر زمردي
+            '#FF69B4', // وردي (تم استبدال الأزرق الفيروزي به)
+            '#9C27B0', // بنفسجي خزامي داكن
+            '#F44336', // أحمر ياقوتي
+            '#FF9800', // كهرماني داكن
+            '#00BCD4'  // أزرق سماوي عميق (اللون الأزرق الآخر)
+        ];
+
+        // دالة لتحديد عدد اللاعبين وتهيئة اللعبة
+        function setPlayerCount(count) {
+            teamNames = Array(count).fill().map((_, i) => `الفريق ${i + 1}`);
+            scores = Array(count).fill(0);
+
+            // تحديد تخطيط الشبكة بناءً على عدد الفرق
+            if (count === 3) {
+                container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                container.style.maxWidth = '640px';
+            } else if (count === 4) {
+                container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                container.style.maxWidth = '410px';
+            } else if (count === 6) {
+                container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                container.style.maxWidth = '640px';
+            }
+
+            // تعديل الهوامش لضمان عدم تداخل الفرق مع لوحة الترتيب
+            adjustLayout();
+
+            modalPlayerCount.style.display = 'none'; // إخفاء نافذة تحديد اللاعبين
+            modal1.style.display = 'flex'; // إظهار نافذة النصائح
+            renderTeams(); // رسم الفرق بناءً على العدد الجديد
+            updateRanks(); // تحديث لوحة الترتيب
+        }
+
+        // دالة لرسم الفرق على الشاشة
+        function renderTeams() {
+            container.innerHTML = ''; // مسح المحتوى الحالي
+
+            scores.forEach((score, i) => {
+                const div = document.createElement('div');
+                div.className = 'team';
+                // تعيين لون الخلفية من مصفوفة teamColors
+                div.style.backgroundColor = teamColors[i % teamColors.length]; // استخدام المعامل % لضمان عدم تجاوز طول المصفوفة
+
+                const name = document.createElement('div');
+                name.className = 'team-name';
+                name.innerText = teamNames[i];
+                div.appendChild(name);
+
+                const button = document.createElement('button');
+                button.className = 'score-btn';
+                button.innerText = score;
+                button.onclick = () => {
+                    scores[i]++; // زيادة النقطة عند النقر
+                    renderTeams(); // إعادة رسم الفرق لتحديث النقاط
+                    updateRanks(); // تحديث لوحة الترتيب
+                };
+                div.appendChild(button);
+
+                container.appendChild(div);
+            });
+        }
+
+        // دالة لتحديث لوحة ترتيب المراكز (أول 3 مراكز فقط)
+        function updateRanks() {
+            const scorePairs = scores.map((s, i) => ({ team: teamNames[i], score: s }));
+            // فرز الفرق تنازلياً حسب النقاط
+            scorePairs.sort((a, b) => b.score - a.score);
+
+            // عرض أول 3 مراكز فقط
+            ranksDiv.innerHTML = scorePairs.slice(0, 3).map((s, i) => {
+                let medal = '';
+                if (i === 0) medal = '🥇';
+                else if (i === 1) medal = '🥈';
+                else if (i === 2) medal = '🥉';
+                return `<div class="rank"><span class="medal">${medal}</span> ${s.team} - ${s.score}</div>`;
+            }).join('');
+        }
+
+        // حدث النقر على زر إعادة التعيين
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            // إعادة تعيين النقاط فقط، مع الاحتفاظ بعدد الفرق الحالي
+            scores = Array(scores.length).fill(0);
+            renderTeams(); // إعادة رسم الفرق
+            updateRanks(); // تحديث لوحة الترتيب
+        });
+
+        // دالة لتعديل أسماء الفرق
+        function editTeamNames() {
+            teamNames = teamNames.map((name, i) => {
+                // استخدام prompt لطلب اسم جديد، أو الاحتفاظ بالاسم القديم إذا تم الإلغاء
+                const newName = prompt(`أدخل اسم الفريق ${i + 1}:`, name);
+                return newName === null ? name : newName; // إذا ضغط المستخدم على إلغاء، احتفظ بالاسم القديم
+            });
+            renderTeams(); // إعادة رسم الفرق بأسماء جديدة
+            updateRanks(); // تحديث لوحة الترتيب
+        }
+
+        // دالة لبدء اللعبة (إخفاء النافذة المنبثقة)
+        function startGame() {
+            modal1.style.display = 'none';
+        }
+
+        // دالة لإنشاء أيقونات حاسبة موزعة بشكل خطوط قطرية
+        function createCalculatorIconsDiagonal() {
+            // إزالة أي أيقونات موجودة مسبقًا لتجنب التكرار
+            document.querySelectorAll('.calculator-icon').forEach(icon => icon.remove());
+
+            const bodyWidth = document.body.clientWidth;
+            const bodyHeight = document.body.clientHeight;
+            const iconSize = 40; // حجم الأيقونة بالبكسل (محدد في CSS)
+            const spacing = 60; // المسافة بين الأيقونات على طول الخط القطري
+            const lineOffset = 100; // المسافة بين الخطوط القطرية المتوازية
+            const padding = 50; // هامش من الحواف
+
+            // لحساب عدد الخطوط القطرية اللازمة لتغطية الشاشة
+            const totalLength = bodyWidth + bodyHeight; // أقصى طول قطري ممكن
+            const numberOfLines = Math.ceil(totalLength / lineOffset);
+
+            for (let i = 0; i < numberOfLines; i++) {
+                // تحديد نقطة بداية لكل خط قطري
+                // يمكن أن تبدأ من الحافة اليسرى السفلية وتصعد
+                // أو من الحافة العلوية اليمنى وتنزل
+                // هنا سنبدأ من أقصى اليسار السفلي ونتحرك لأعلى ويمين
+
+                let startX = -bodyHeight + (i * lineOffset);
+                let startY = bodyHeight;
+
+                // الآن نرسم الأيقونات على طول هذا الخط القطري
+                for (let j = 0; ; j++) {
+                    const xPos = startX + j * spacing;
+                    const yPos = startY - j * spacing;
+
+                    // التوقف إذا خرجت الأيقونة عن حدود الشاشة
+                    if (xPos > bodyWidth + padding || yPos < -padding) {
+                        break;
+                    }
+
+                    // وضع الأيقونة فقط إذا كانت داخل حدود الشاشة المرئية تقريباً
+                    if (xPos >= -iconSize && xPos <= bodyWidth && yPos >= -iconSize && yPos <= bodyHeight) {
+                        const icon = document.createElement('span');
+                        icon.classList.add('calculator-icon');
+                        icon.innerHTML = '🧮'; // رمز الحاسبة الجديد
+
+                        icon.style.left = `${xPos}px`;
+                        icon.style.top = `${yPos}px`;
+
+                        document.body.appendChild(icon);
+                    }
+                }
+            }
+        }
+
+
+        // دالة لضبط تخطيط الصفحة بناءً على حجم الشاشة
+        function adjustLayout() {
+            // شريط الملاحظة دائماً في الأعلى
+            noticeBar.style.top = `0`;
+
+            // لوحة الترتيب في الزاوية العلوية اليمنى (فوق شريط الملاحظة)
+            rankingBox.style.top = `0`;
+            rankingBox.style.right = `0`;
+
+            // حساب الارتفاع الكلي للعناصر الثابتة في الأعلى
+            const totalFixedHeaderHeight = noticeBar.offsetHeight;
+
+            if (window.innerWidth >= 992) {
+                // على الشاشات الكبيرة، نخصص مساحة للوحة الترتيب ونركز الفرق في المساحة المتبقية
+                document.body.style.paddingTop = `${totalFixedHeaderHeight + 30}px`; // إضافة مسافة إضافية للفرق
+                document.body.style.paddingRight = `${rankingBox.offsetWidth + 20}px`; // عرض لوحة الترتيب + هامش
+                container.style.margin = '0 auto'; /* لضمان التوسيط في المساحة المتبقية */
+            } else {
+                // على الشاشات الأصغر، لا حاجة لمسافة للوحة الترتيب (لأنها ستكون ثابتة)
+                document.body.style.paddingTop = `${totalFixedHeaderHeight + 30}px`;
+                document.body.style.paddingRight = '0';
+                container.style.margin = '0 auto'; /* لضمان التوسيط في المساحة الكاملة */
+            }
+
+            // إعادة رسم أيقونات الحاسبة عند تغيير حجم الشاشة
+            createCalculatorIconsDiagonal();
+        }
+
+        // عند تحميل الصفحة
+        window.onload = () => {
+            // إظهار نافذة تحديد عدد اللاعبين أولاً
+            modalPlayerCount.style.display = 'flex';
+
+            // إنشاء أيقونات الحاسبة الموزعة قطرياً عند التحميل
+            createCalculatorIconsDiagonal();
+
+            // إضافة مستمع لحدث تغيير حجم الشاشة لتعديل الهوامش والأيقونات
+            window.addEventListener('resize', adjustLayout);
+            // استدعاء الدالة عند التحميل أيضاً وبعد التأكد من تحميل العناصر
+            setTimeout(adjustLayout, 100);
+        };
+    </script>
+</body>
+</html>
