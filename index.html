@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title> حاسبة نقاط </title>
+    <title>لعبة من أكون؟</title>
     <style>
         /* الخطوط الأساسية والخلفية */
         body {
@@ -12,13 +12,17 @@
             color: white;
             text-align: center;
             margin: 0;
-            overflow: hidden; /* لمنع ظهور شريط التمرير بسبب العناصر المتساقطة */
+            overflow-x: hidden; /* لمنع ظهور شريط التمرير الأفقي */
             position: relative; /* لتمكين الطبقات الشفافة والعناصر المتساقطة */
             min-height: 100vh; /* لضمان أن الخلفية تغطي الشاشة بالكامل */
-            /* padding-top و padding-right سيتم تعيينهما بواسطة JavaScript */
+            display: flex; /* استخدام فليكس بوكس لسهولة التخطيط */
+            flex-direction: column;
+            align-items: center; /* توسيط المحتوى */
+            padding-top: clamp(60px, 12vw, 80px); /* بادينج علوي لترك مسافة للشريط العلوي */
+            padding-bottom: 20px; /* بادينج سفلي */
         }
 
-        /* الطبقة الشفافة السوداء فوق الخلفية - تم زيادة الشفافية */
+        /* الطبقة الشفافة السوداء فوق الخلفية */
         .overlay {
             position: fixed;
             top: 0;
@@ -29,25 +33,25 @@
             z-index: 1; /* ليكون فوق الخلفية وتحت المحتوى */
         }
 
-        /* شريط التحذير الثابت والمركزي - تم تغيير اللون الأزرق الغامق */
+        /* شريط التحذير الثابت والمركزي */
         .notice-bar {
             background-color: #385E5D; /* أزرق غامق جديد */
             color: white;
-            padding: 10px 0;
-            font-size: 18px;
+            padding: clamp(8px, 2vw, 10px) 0; /* بادينج رأسي مستجيب */
+            font-size: clamp(14px, 3vw, 18px); /* حجم خط مستجيب */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             position: fixed; /* أصبح ثابتًا */
+            top: 0; /* الشريط في الأعلى تماماً */
             left: 0;
             width: 100%;
             z-index: 10; /* ليكون فوق كل شيء */
             text-align: center; /* لمركزة النص */
-            top: 0; /* الشريط في الأعلى تماماً */
         }
 
         .notice-content {
             white-space: normal; /* السماح بالتفاف النص إذا كان طويلاً */
             display: block; /* لجعل النص يأخذ العرض الكامل */
-            padding: 0 15px; /* مسافة داخلية للنص */
+            padding: 0 clamp(10px, 3vw, 15px); /* مسافة داخلية للنص */
         }
 
         .notice-bar .red {
@@ -62,13 +66,16 @@
         /* تنسيق الفرق */
         .teams {
             display: grid;
-            gap: 80px; /* زيادة التباعد بين الأعمدة والصفوف بشكل أكبر */
+            gap: clamp(20px, 5vw, 80px); /* تباعد مستجيب بين الأعمدة والصفوف */
             justify-items: center;
-            margin: 30px auto; /* لمركزة الفرق */
+            margin: clamp(20px, 4vw, 30px) auto; /* لمركزة الفرق */
             position: relative;
             z-index: 2; /* ليكون فوق الطبقة الشفافة */
-            padding: 0 15px; /* مسافة داخلية على الجوانب */
-            /* grid-template-columns و max-width سيتم تعيينهما بواسطة JavaScript */
+            padding: 0 clamp(10px, 3vw, 15px); /* مسافة داخلية على الجوانب */
+            width: 100%; /* تأكد من أن تأخذ العرض المتاح */
+            max-width: 680px; /* أقصى عرض للشبكة على الشاشات الكبيرة */
+            box-sizing: border-box; /* للتأكد من أن البادينج لا يزيد العرض الكلي */
+            /* grid-template-columns سيتم تعيينه بواسطة JavaScript */
         }
 
         .team {
@@ -76,27 +83,28 @@
             flex-direction: column;
             align-items: center;
             /* background-color سيتم تعيينه ديناميكيًا */
-            padding: 15px; /* تكبير حجم البادينج */
+            padding: clamp(10px, 3vw, 15px); /* بادينج مستجيب */
             border-radius: 15px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             width: 100%; /* ليأخذ العرض المتاح في العمود */
-            max-width: 180px; /* تكبير أقصى عرض لكل فريق */
+            max-width: clamp(140px, 30vw, 180px); /* أقصى عرض مستجيب لكل فريق */
             transition: background-color 0.3s ease; /* لإضافة انتقال سلس لتغيير اللون */
+            box-sizing: border-box; /* للتأكد من أن البادينج لا يزيد العرض الكلي */
         }
 
         .team-name {
             color: white; /* جعل لون اسم الفريق أبيض ليناسب الخلفيات الداكنة */
             font-weight: bold;
-            font-size: 24px; /* تكبير حجم الخط */
-            margin: 8px 0;
+            font-size: clamp(18px, 4vw, 24px); /* حجم خط مستجيب */
+            margin: clamp(5px, 1.5vw, 8px) 0;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
-        /* أزرار النقاط - تم تغيير اللون الأزرق الفاتح */
+        /* أزرار النقاط */
         .score-btn {
-            width: 120px; /* تكبير العرض */
-            height: 60px; /* تكبير الارتفاع */
-            font-size: 30px; /* تكبير حجم الخط */
+            width: clamp(80px, 18vw, 120px); /* عرض مستجيب */
+            height: clamp(40px, 9vw, 60px); /* ارتفاع مستجيب */
+            font-size: clamp(24px, 5vw, 30px); /* حجم خط مستجيب */
             color: #3e2723; /* لون غامق للنص داخل الزر */
             background-color: #A8CCCB; /* أزرق فاتح جديد */
             border: none;
@@ -117,15 +125,15 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
 
-        /* أزرار التحكم الرئيسية (إعادة تعيين وتعديل الأسماء) - تم تغيير اللون الأزرق الغامق */
+        /* أزرار التحكم الرئيسية (إعادة تعيين وتعديل الأسماء) */
         #resetBtn, #editNamesBtn {
-            margin: 20px 10px;
-            padding: 15px 30px; /* تكبير البادينج */
+            margin: clamp(15px, 3vw, 20px) clamp(5px, 1.5vw, 10px); /* هوامش مستجيبة */
+            padding: clamp(12px, 3.5vw, 15px) clamp(25px, 6vw, 30px); /* بادينج مستجيب */
             background-color: #385E5D; /* أزرق غامق جديد */
             color: white;
             border: none;
             border-radius: 10px;
-            font-size: 22px; /* تكبير حجم الخط */
+            font-size: clamp(18px, 4vw, 22px); /* حجم خط مستجيب */
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -143,25 +151,30 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        /* لوحة ترتيب المراكز - تم تغيير اللون الأزرق الغامق */
+        /* لوحة ترتيب المراكز */
         #rankingBox {
-            position: fixed;
-            top: 0; /* تم رفعه ليصبح بمحاذاة شريط الملاحظة */
-            right: 0; /* تم لفه لليمين ليصبح في الزاوية */
+            position: sticky; /* أصبحت ثابتة أثناء التمرير على الشاشات الكبيرة */
+            top: 0; /* ستلتصق بالقمة */
+            right: 0;
             background-color: #385E5D; /* أزرق غامق جديد */
-            padding: 30px 25px; /* تكبير البادينج لزيادة الطول، والعرض */
+            padding: clamp(20px, 4vw, 30px) clamp(15px, 3vw, 25px); /* بادينج مستجيب */
             border-radius: 0 0 15px 15px; /* حواف دائرية في الأسفل فقط */
             color: white;
-            font-size: 18px;
+            font-size: clamp(16px, 3.5vw, 18px); /* حجم خط مستجيب */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             z-index: 11; /* أعلى من شريط الملاحظة */
-            width: 150px; /* تصغير العرض قليلاً */
+            width: clamp(120px, 25vw, 150px); /* عرض مستجيب */
             height: auto; /* ليتكيف الطول مع المحتوى */
+            box-sizing: border-box;
+            align-self: flex-start; /* لتموضعها في الأعلى يمينًا ضمن الـ flex container */
+            margin-top: clamp(60px, 12vw, 80px); /* بادينج علوي لترك مسافة للشريط العلوي */
+            margin-right: -100%; /* لتعويض مسافة الـ padding-right في الجسم */
+            transform: translateX(100%); /* لتثبيتها في الزاوية اليمنى العليا */
         }
 
         #rankingBox h3 {
             margin-top: 0;
-            font-size: 24px;
+            font-size: clamp(20px, 4.5vw, 24px); /* حجم خط مستجيب */
             color: #f3e5c3; /* لون فاتح للعنوان */
             border-bottom: 1px solid rgba(255, 255, 255, 0.3);
             padding-bottom: 8px;
@@ -170,8 +183,8 @@
         }
 
         .rank {
-            margin: 8px 0;
-            font-size: 18px;
+            margin: clamp(6px, 1.5vw, 8px) 0;
+            font-size: clamp(14px, 3vw, 18px); /* حجم خط مستجيب */
             display: flex;
             align-items: center;
             justify-content: center; /* محاذاة النص في المنتصف */
@@ -179,7 +192,7 @@
         }
 
         .rank .medal {
-            font-size: 22px;
+            font-size: clamp(18px, 4vw, 22px); /* حجم خط مستجيب */
         }
 
         /* النوافذ المنبثقة (Modal) */
@@ -199,8 +212,8 @@
         .modal-content {
             background-color: #e0f7fa; /* لون أزرق فاتح جداً لمحتوى المودال */
             color: #000000; /* لون نص أسود بالكامل */
-            padding: 30px;
-            max-height: 85vh; /* زيادة ارتفاع المودال قليلاً */
+            padding: clamp(20px, 5vw, 30px); /* بادينج مستجيب */
+            max-height: 90vh; /* زيادة ارتفاع المودال قليلاً */
             overflow-y: auto;
             width: 90%; /* عرض أكبر للمودال على الشاشات الصغيرة */
             max-width: 600px; /* أقصى عرض للمودال */
@@ -209,28 +222,28 @@
             position: relative;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
             line-height: 1.6; /* تحسين قابلية القراءة */
-            font-size: 18px;
+            font-size: clamp(16px, 3.5vw, 18px); /* حجم خط مستجيب */
         }
 
         .modal-content h2 {
-            font-size: 28px;
+            font-size: clamp(24px, 5vw, 28px); /* حجم خط مستجيب */
             color: #5d4037;
-            margin-bottom: 20px;
+            margin-bottom: clamp(15px, 3vw, 20px);
         }
 
         .modal-content p {
-            margin-bottom: 15px;
+            margin-bottom: clamp(10px, 2.5vw, 15px);
         }
 
-        /* زر المودال - تم تغيير اللون الأزرق الغامق */
+        /* زر المودال */
         .modal-content button {
-            margin-top: 25px;
+            margin-top: clamp(20px, 4vw, 25px); /* هامش علوي مستجيب */
             background-color: #385E5D; /* أزرق غامق جديد */
             color: white;
-            padding: 15px 30px;
+            padding: clamp(12px, 3.5vw, 15px) clamp(25px, 6vw, 30px); /* بادينج مستجيب */
             border: none;
             border-radius: 10px;
-            font-size: 24px;
+            font-size: clamp(20px, 4.5vw, 24px); /* حجم خط مستجيب */
             cursor: pointer;
             display: block;
             margin-left: auto;
@@ -245,9 +258,9 @@
 
         .close-btn {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 32px;
+            top: clamp(10px, 2.5vw, 15px);
+            left: clamp(10px, 2.5vw, 15px);
+            font-size: clamp(28px, 6vw, 32px); /* حجم خط مستجيب */
             color: #5d4037;
             cursor: pointer;
             transition: transform 0.2s ease;
@@ -262,30 +275,31 @@
             background-color: rgba(0, 0, 0, 0.95); /* أسود شفاف أغمق جداً */
             color: white;
             text-align: center;
-            padding: 40px;
+            padding: clamp(30px, 7vw, 40px); /* بادينج مستجيب */
             max-width: 400px;
         }
 
         .modal-player-count .modal-content h2 {
             color: white;
-            margin-bottom: 30px;
+            margin-bottom: clamp(20px, 4vw, 30px);
         }
 
         .player-count-buttons {
             display: flex;
             justify-content: space-around;
-            gap: 15px;
-            margin-top: 20px;
+            gap: clamp(10px, 2.5vw, 15px); /* تباعد مستجيب */
+            margin-top: clamp(15px, 3vw, 20px);
+            flex-wrap: wrap; /* للسماح بالأزرار بالالتفاف على الأجهزة الصغيرة */
         }
 
-        /* أزرار اختيار عدد اللاعبين - تم تغيير الألوان */
+        /* أزرار اختيار عدد اللاعبين */
         .player-count-buttons button {
             background-color: #A8CCCB; /* أزرق فاتح جديد */
             color: #385E5D; /* أزرق غامق جديد */
-            padding: 15px 25px;
+            padding: clamp(12px, 3.5vw, 15px) clamp(20px, 5vw, 25px); /* بادينج مستجيب */
             border: none;
             border-radius: 10px;
-            font-size: 22px;
+            font-size: clamp(18px, 4vw, 22px); /* حجم خط مستجيب */
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
             flex-grow: 1; /* لجعل الأزرار تتمدد بالتساوي */
@@ -300,7 +314,7 @@
         /* أيقونة الحاسبة الموزعة في الخلفية */
         .calculator-icon {
             position: absolute;
-            font-size: 40px; /* حجم الأيقونة */
+            font-size: clamp(30px, 8vw, 40px); /* حجم الأيقونة مستجيب */
             color: rgba(0, 0, 0, 0.25); /* اللون أسود مع شفافية أغمق قليلاً */
             pointer-events: none; /* لجعلها غير قابلة للتفاعل */
             user-select: none; /* لمنع تحديدها */
@@ -309,34 +323,26 @@
         }
 
         /* استجابة التصميم للشاشات الصغيرة */
-        @media (max-width: 768px) {
-            .notice-bar {
-                font-size: 16px;
+        @media (min-width: 769px) {
+            body {
+                padding-right: clamp(170px, 20vw, 200px); /* مسافة للوحة الترتيب على اليمين للشاشات الكبيرة */
             }
+        }
 
+        @media (max-width: 768px) {
             .teams {
                 grid-template-columns: repeat(2, 1fr) !important; /* عمودين على الأجهزة اللوحية */
-                margin: 20px auto;
-                max-width: 400px !important; /* تقليل العرض الأقصى للفرق */
-                margin-right: auto !important; /* إزالة المسافة الإضافية */
-            }
-
-            .team-name {
-                font-size: 20px;
-            }
-
-            .score-btn {
-                width: 100px; /* تصغير أكثر على الجوالات */
-                height: 50px;
-                font-size: 26px;
+                max-width: 450px; /* تقليل العرض الأقصى للفرق */
             }
 
             #rankingBox {
                 position: static; /* إزالة التثبيت على الشاشات الصغيرة */
-                margin: 20px auto;
+                margin: 20px auto; /* توسيطها في وسط الصفحة */
                 width: 90%;
                 max-width: 400px;
                 text-align: center;
+                border-radius: 15px; /* جعل كل الحواف دائرية عندما تكون ثابتة */
+                transform: none; /* إلغاء أي تحويلات */
             }
 
             #rankingBox h3 {
@@ -346,35 +352,12 @@
             .rank {
                 justify-content: center;
             }
-
-            .modal-content {
-                padding: 20px;
-                font-size: 16px;
-            }
-
-            .modal-content h2 {
-                font-size: 24px;
-            }
-
-            .modal-content button {
-                font-size: 20px;
-                padding: 12px 25px;
-            }
-
-            #resetBtn, #editNamesBtn {
-                font-size: 18px;
-                padding: 10px 20px;
-            }
-
-            .player-count-buttons button {
-                font-size: 18px;
-                padding: 12px 20px;
-            }
         }
 
         @media (max-width: 480px) {
             .teams {
                 grid-template-columns: 1fr !important; /* عمود واحد على الجوالات */
+                max-width: 250px; /* تقليل العرض الأقصى للفرق */
             }
         }
     </style>
@@ -386,12 +369,6 @@
             <span class="red">ملاحظة:</span> <span class="brown">هذه النسخه لشخص واحد فقط وغير قابله للنشر او البيع ومن يخالف ذلك سيتم اتخاذ الإجراءات القانونيه في هذا الأمر وللتذكير بذمتك وأمانتك:<br>"قال ﷺ "لا إيمان لمن لا أمانة له، ولا دين لمن لا عهد له"</span>
         </div>
     </div>
-
-      
-<div id="game-logo-bar">
-  <img src="https://raw.githubusercontent.com/pointscalculator/pointscalculator/main/calcolater-removebg-preview.png" alt="شعار اللعبة">
-      </div>
-    
 
     <div class="overlay"></div>
 
@@ -465,17 +442,11 @@
             // تحديد تخطيط الشبكة بناءً على عدد الفرق
             if (count === 3) {
                 container.style.gridTemplateColumns = 'repeat(3, 1fr)';
-                container.style.maxWidth = '640px';
             } else if (count === 4) {
                 container.style.gridTemplateColumns = 'repeat(2, 1fr)';
-                container.style.maxWidth = '410px';
             } else if (count === 6) {
                 container.style.gridTemplateColumns = 'repeat(3, 1fr)';
-                container.style.maxWidth = '640px';
             }
-
-            // تعديل الهوامش لضمان عدم تداخل الفرق مع لوحة الترتيب
-            adjustLayout();
 
             modalPlayerCount.style.display = 'none'; // إخفاء نافذة تحديد اللاعبين
             modal1.style.display = 'flex'; // إظهار نافذة النصائح
@@ -570,10 +541,6 @@
 
             for (let i = 0; i < numberOfLines; i++) {
                 // تحديد نقطة بداية لكل خط قطري
-                // يمكن أن تبدأ من الحافة اليسرى السفلية وتصعد
-                // أو من الحافة العلوية اليمنى وتنزل
-                // هنا سنبدأ من أقصى اليسار السفلي ونتحرك لأعلى ويمين
-
                 let startX = -bodyHeight + (i * lineOffset);
                 let startY = bodyHeight;
 
@@ -603,34 +570,6 @@
         }
 
 
-        // دالة لضبط تخطيط الصفحة بناءً على حجم الشاشة
-        function adjustLayout() {
-            // شريط الملاحظة دائماً في الأعلى
-            noticeBar.style.top = `0`;
-
-            // لوحة الترتيب في الزاوية العلوية اليمنى (فوق شريط الملاحظة)
-            rankingBox.style.top = `0`;
-            rankingBox.style.right = `0`;
-
-            // حساب الارتفاع الكلي للعناصر الثابتة في الأعلى
-            const totalFixedHeaderHeight = noticeBar.offsetHeight;
-
-            if (window.innerWidth >= 992) {
-                // على الشاشات الكبيرة، نخصص مساحة للوحة الترتيب ونركز الفرق في المساحة المتبقية
-                document.body.style.paddingTop = `${totalFixedHeaderHeight + 30}px`; // إضافة مسافة إضافية للفرق
-                document.body.style.paddingRight = `${rankingBox.offsetWidth + 20}px`; // عرض لوحة الترتيب + هامش
-                container.style.margin = '0 auto'; /* لضمان التوسيط في المساحة المتبقية */
-            } else {
-                // على الشاشات الأصغر، لا حاجة لمسافة للوحة الترتيب (لأنها ستكون ثابتة)
-                document.body.style.paddingTop = `${totalFixedHeaderHeight + 30}px`;
-                document.body.style.paddingRight = '0';
-                container.style.margin = '0 auto'; /* لضمان التوسيط في المساحة الكاملة */
-            }
-
-            // إعادة رسم أيقونات الحاسبة عند تغيير حجم الشاشة
-            createCalculatorIconsDiagonal();
-        }
-
         // عند تحميل الصفحة
         window.onload = () => {
             // إظهار نافذة تحديد عدد اللاعبين أولاً
@@ -639,16 +578,9 @@
             // إنشاء أيقونات الحاسبة الموزعة قطرياً عند التحميل
             createCalculatorIconsDiagonal();
 
-            // إضافة مستمع لحدث تغيير حجم الشاشة لتعديل الهوامش والأيقونات
-            window.addEventListener('resize', adjustLayout);
-            // استدعاء الدالة عند التحميل أيضاً وبعد التأكد من تحميل العناصر
-            setTimeout(adjustLayout, 100);
+            // إضافة مستمع لحدث تغيير حجم الشاشة لإعادة رسم الأيقونات
+            window.addEventListener('resize', createCalculatorIconsDiagonal);
         };
     </script>
 </body>
 </html>
-
-
-
-
-
