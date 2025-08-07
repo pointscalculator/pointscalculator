@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>حاسبة النقاط</title>
+    <style>
+        /* الخطوط الأساسية والخلفية */
+        body {
+            background-color: #e0f2f7; /* أزرق فاتح جداً للخلفية الأساسية */
+            font-family: 'Inter', sans-serif; /* استخدام خط Inter */
+            color: white;
+            text-align: center;
+            margin: 0;
+            overflow-x: hidden; /* لمنع ظهور شريط التمرير الأفقي */
+            position: relative; /* لتمكين الطبقات الشفافة والعناصر المتساقطة */
+            min-height: 100vh; /* لضمان أن الخلفية تغطي الشاشة بالكامل */
+            display: flex; /* استخدام فليكس بوكس لسهولة التخطيط */
+            flex-direction: column;
+            align-items: center; /* توسيط المحتوى */
+            padding-top: clamp(60px, 12vw, 80px); /* بادينج علوي لترك مسافة للشريط العلوي */
+            padding-bottom: 20px; /* بادينج سفلي */
+        }
+
+        /* شريط التحذير الثابت والمركزي */
+        .notice-bar {
+            background-color: #385E5D; /* أزرق غامق جديد */
+            color: white;
+            padding: clamp(8px, 2vw, 10px) 0; /* بادينج رأسي مستجيب */
+            font-size: clamp(14px, 3vw, 18px); /* حجم خط مستجيب */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed; /* أصبح ثابتًا */
+            top: 0; /* الشريط في الأعلى تماماً */
+            left: 0;
+            width: 100%; /* تأكيد عرض الصفحة بالكامل */
+            z-index: 10; /* ليكون فوق كل شيء */
+            text-align: center; /* لمركزة النص */
+        }
+
+        .notice-content {
+            white-space: normal; /* السماح بالتفاف النص إذا كان طويلاً */
+            display: block; /* لجعل النص يأخذ العرض الكامل */
+            padding: 0 clamp(10px, 3vw, 15px); /* مسافة داخلية للنص */
+        }
+
+        .notice-bar .red {
+            color: #ffcc00; /* لون ذهبي للملاحظة */
+            font-weight: bold;
+        }
+
+        .notice-bar .brown {
+            color: white; /* لون أبيض للنص داخل الشريط ليظهر بوضوح */
+        }
+
+        /* تنسيق الفرق */
+        .teams {
+            display: grid;
+            gap: clamp(20px, 5vw, 80px); /* تباعد مستجيب بين الأعمدة والصفوف */
+            justify-items: center;
+            margin: clamp(20px, 4vw, 30px) auto; /* لمركزة الفرق */
+            position: relative;
+            z-index: 2; /* ليكون فوق الطبقة الشفافة */
+            padding: 0 clamp(10px, 3vw, 15px); /* مسافة داخلية على الجوانب */
+            width: 100%; /* تأكد من أن تأخذ العرض المتاح */
+            max-width: 750px; /* زيادة أقصى عرض للشبكة على الشاشات الكبيرة لاستيعاب الزر الإضافي */
+            box-sizing: border-box; /* للتأكد من أن البادينج لا يزيد العرض الكلي */
+            /* grid-template-columns سيتم تعيينه بواسطة JavaScript */
+        }
+
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* background-color سيتم تعيينه ديناميكيًا */
+            padding: clamp(15px, 4vw, 25px); /* زيادة البادينج لزيادة حجم المربع */
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            width: 100%; /* ليأخذ العرض المتاح في العمود */
+            max-width: clamp(180px, 35vw, 220px); /* زيادة أقصى عرض مستجيب لكل فريق */
+            transition: background-color 0.3s ease; /* لإضافة انتقال سلس لتغيير اللون */
+            box-sizing: border-box; /* للتأكد من أن البادينج لا يزيد العرض الكلي */
+        }
+
+        .team-name {
+            color: white; /* جعل لون اسم الفريق أبيض ليناسب الخلفيات الداكنة */
+            font-weight: bold;
+            font-size: clamp(20px, 4.5vw, 28px); /* حجم خط أكبر ومستجيب */
+            margin: clamp(5px, 1.5vw, 8px) 0 clamp(10px, 2.5vw, 15px); /* زيادة الهامش السفلي قليلاً */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* أزرار النقاط */
+        .score-buttons {
+            display: flex;
+            gap: clamp(8px, 2vw, 12px); /* مسافة بين الأزرار */
+            margin-top: clamp(10px, 2.5vw, 15px); /* مسافة بين اسم الفريق والأزرار */
+        }
+
+        .score-btn {
+            width: clamp(60px, 15vw, 90px); /* عرض مستجيب */
+            height: clamp(50px, 10vw, 70px); /* ارتفاع مستجيب */
+            font-size: clamp(28px, 6vw, 36px); /* حجم خط أكبر مستجيب */
+            color: #3e2723; /* لون غامق للنص داخل الزر */
+            background-color: #A8CCCB; /* أزرق فاتح جديد */
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* تم إزالة .score-btn.minus لتوحيد اللون */
+        .score-btn:hover {
+            background-color: #385E5D; /* استخدام اللون الأزرق الغامق الجديد عند التحويم */
+            transform: translateY(-3px);
+            color: white; /* تغيير لون النص عند التحويم لزر الزيادة */
+        }
+
+        /* تم إزالة .score-btn.minus:hover لتوحيد اللون */
+
+        .score-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .current-score {
+            font-size: clamp(30px, 7vw, 40px); /* حجم خط كبير لعرض النتيجة */
+            color: white;
+            font-weight: bold;
+            margin-top: clamp(10px, 2.5vw, 15px); /* مسافة بين الأزرار وعرض النتيجة */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+
+        /* أزرار التحكم الرئيسية (إعادة تعيين وتعديل الأسماء) */
+        #resetBtn, #editNamesBtn {
+            margin: clamp(15px, 3vw, 20px) clamp(5px, 1.5vw, 10px); /* هوامش مستجيبة */
+            padding: clamp(12px, 3.5vw, 15px) clamp(25px, 6vw, 30px); /* بادينج مستجيب */
+            background-color: #385E5D; /* أزرق غامق جديد */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: clamp(18px, 4vw, 22px); /* حجم خط مستجيب */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        #resetBtn:hover, #editNamesBtn:hover {
+            background-color: #5B8C8B; /* لون أغمق قليلاً من الأزرق الغامق الجديد عند التحويم */
+            transform: translateY(-2px);
+        }
+
+        #resetBtn:active, #editNamesBtn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* لوحة ترتيب المراكز */
+        #rankingBox {
+            position: relative; /* أصبح جزءًا من تدفق المستند */
+            margin: clamp(20px, 4vw, 30px) auto; /* توسيطها بين شريط الملاحظة والفرق */
+            background-color: #385E5D; /* أزرق غامق جديد */
+            padding: clamp(20px, 4vw, 30px) clamp(15px, 3vw, 25px); /* بادينج مستجيب */
+            border-radius: 15px; /* حواف دائرية بالكامل */
+            color: white;
+            font-size: clamp(16px, 3.5vw, 18px); /* حجم خط مستجيب */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 2; /* ليكون فوق الطبقة الشفافة وتحت شريط الملاحظة */
+            width: 90%; /* عرض مستجيب */
+            max-width: 680px; /* أقصى عرض للشبكة على الشاشات الكبيرة */
+            height: auto; /* ليتكيف الطول مع المحتوى */
+            box-sizing: border-box;
+            text-align: center; /* محاذاة النص في المنتصف */
+        }
+
+        #rankingBox h3 {
+            margin-top: 0;
+            font-size: clamp(20px, 4.5vw, 24px); /* حجم خط مستجيب */
+            color: #f3e5c3; /* لون فاتح للعنوان */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            text-align: center; /* محاذاة العنوان في المنتصف */
+        }
+
+        .rank {
+            margin: clamp(6px, 1.5vw, 8px) 0;
+            font-size: clamp(14px, 3vw, 18px); /* حجم خط مستجيب */
+            display: flex;
+            align-items: center;
+            justify-content: center; /* محاذاة النص في المنتصف */
+            gap: 5px; /* مسافة بين العناصر */
+        }
+
+        .rank .medal {
+            font-size: clamp(18px, 4vw, 22px); /* حجم خط مستجيب */
+        }
+
+        /* النوافذ المنبثقة (Modal) */
+        .popup-overlay { /* تم تغيير الاسم ليتناسب مع نافذة الترحيب */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.8); /* خلفية أغمق للمودال */
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #e0f7fa; /* لون أزرق فاتح جداً لمحتوى المودال */
+            color: #000000; /* لون نص أسود بالكامل */
+            padding: clamp(20px, 5vw, 30px); /* بادينج مستجيب */
+            max-height: 90vh; /* زيادة ارتفاع المودال قليلاً */
+            overflow-y: auto;
+            width: 90%; /* عرض أكبر للمودال على الشاشات الصغيرة */
+            max-width: 600px; /* أقصى عرض للمودال */
+            border-radius: 15px;
+            text-align: right;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            line-height: 1.6; /* تحسين قابلية القراءة */
+            font-size: clamp(16px, 3.5vw, 18px); /* حجم خط مستجيب */
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .popup-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h2 {
+            font-size: clamp(24px, 5vw, 28px); /* حجم خط مستجيب */
+            color: #5d4037;
+            margin-bottom: clamp(15px, 3vw, 20px);
+        }
+
+        .modal-content p {
+            margin-bottom: clamp(10px, 2.5vw, 15px);
+        }
+
+        /* زر المودال */
+        .modal-content button {
+            margin-top: clamp(20px, 4vw, 25px); /* هامش علوي مستجيب */
+            background-color: #385E5D; /* أزرق غامق جديد */
+            color: white;
+            padding: clamp(12px, 3.5vw, 15px) clamp(25px, 6vw, 30px); /* بادينج مستجيب */
+            border: none;
+            border-radius: 10px;
+            font-size: clamp(20px, 4.5vw, 24px); /* حجم خط مستجيب */
+            cursor: pointer;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .modal-content button:hover {
+            background-color: #5B8C8B; /* لون أغمق قليلاً من الأزرق الغامق الجديد عند التحويم */
+            transform: translateY(-2px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: clamp(10px, 2.5vw, 15px);
+            left: clamp(10px, 2.5vw, 15px);
+            font-size: clamp(28px, 6vw, 32px); /* حجم خط مستجيب */
+            color: #5d4037;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        /* ستايل نافذة تحديد عدد اللاعبين */
+        #modalPlayerCount .modal-content {
+            background-color: rgba(0, 0, 0, 0.95); /* أسود شفاف أغمق جداً */
+            color: white;
+            text-align: center;
+            padding: clamp(30px, 7vw, 40px); /* بادينج مستجيب */
+            max-width: 400px;
+        }
+
+        #modalPlayerCount .modal-content h2 {
+            color: white;
+            margin-bottom: clamp(20px, 4vw, 30px);
+        }
+
+        .player-count-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: clamp(10px, 2.5vw, 15px); /* تباعد مستجيب */
+            margin-top: clamp(15px, 3vw, 20px);
+            flex-wrap: wrap; /* للسماح بالأزرار بالالتفاف على الأجهزة الصغيرة */
+        }
+
+        /* أزرار اختيار عدد اللاعبين */
+        .player-count-buttons button {
+            background-color: #A8CCCB; /* أزرق فاتح جديد */
+            color: #385E5D; /* أزرق غامق جديد */
+            padding: clamp(12px, 3.5vw, 15px) clamp(20px, 5vw, 25px); /* بادينج مستجيب */
+            border: none;
+            border-radius: 10px;
+            font-size: clamp(18px, 4vw, 22px); /* حجم خط مستجيب */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-grow: 1; /* لجعل الأزرار تتمدد بالتساوي */
+            font-weight: bold; /* لجعل الخط أغمق */
+        }
+
+        .player-count-buttons button:hover {
+            background-color: #385E5D; /* أزرق غامق جديد عند التحويم */
+            transform: translateY(-2px);
+        }
+
+        /* أيقونة الحاسبة الموزعة في الخلفية */
+        .calculator-icon {
+            position: absolute;
+            font-size: clamp(30px, 8vw, 40px); /* حجم الأيقونة مستجيب */
+            color: rgba(0, 0, 0, 0.25); /* اللون أسود مع شفافية أغمق قليلاً */
+            pointer-events: none; /* لجعلها غير قابلة للتفاعل */
+            user-select: none; /* لمنع تحديدها */
+            z-index: 0; /* لتكون في الخلفية تمامًا */
+            transform: rotate(45deg); /* دوران الأيقونات لتكون جزءًا من الخط القطري */
+        }
+
+        /* نافذة الترحيب الجديدة */
+        #welcome-popup {
+            background-color: rgba(0,0,0,0.9); /* خلفية داكنة جداً للترحيب */
+        }
+        #welcome-popup .modal-content {
+            background-color: #FFFFFF; /* لون خلفية بيضاء لنافذة الترحيب فقط */
+            color: #000000; /* نص داكن عليها ليكون مقروءًا */
+            display: flex; /* تفعيل فليكس بوكس */
+            flex-direction: column; /* ترتيب العناصر عمودياً */
+            align-items: center; /* توسيط العناصر أفقياً */
+            justify-content: center; /* توسيط العناصر عمودياً */
+            gap: clamp(15px, 4vw, 25px); /* مسافة بين العناصر */
+            padding: clamp(25px, 6vw, 40px);
+            max-width: 400px; /* حجم ثابت نوعاً ما لنافذة الترحيب */
+        }
+
+        #welcome-popup .modal-content h2 {
+            color: #385E5D; /* عنوان باللون الغامق ليكون مقروءًا */
+            margin-bottom: 0; /* إزالة الهامش السفلي الافتراضي للعنوان */
+            font-size: clamp(26px, 6vw, 32px); /* حجم خط أكبر للعنوان */
+        }
+
+        #welcome-popup .modal-content img {
+            max-width: 70%; /* تصغير الصورة قليلاً لتناسب النافذة */
+            height: auto;
+            border-radius: 10px; /* حواف دائرية للصورة */
+            margin-bottom: 0; /* إزالة الهامش السفلي إذا كان موجوداً */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border: 2px solid #385E5D; /* حدود للصورة باللون الغامق */
+        }
+        #welcome-popup .modal-content button {
+            background-color: #385E5D; /* زر باللون الأزرق الغامق */
+            color: white;
+            font-weight: bold;
+        }
+
+        /* استجابة التصميم للشاشات الصغيرة */
+        @media (min-width: 769px) {
+            body {
+                padding-right: 0; /* لا يوجد بادينج لليمين بعد الآن */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .teams {
+                grid-template-columns: repeat(2, 1fr) !important; /* عمودين على الأجهزة اللوحية */
+                max-width: 500px; /* تقليل العرض الأقصى للفرق */
+            }
+
+            #rankingBox {
+                position: relative; /* تظل جزءًا من التدفق */
+                margin: 20px auto; /* توسيطها في وسط الصفحة */
+                width: 90%;
+                max-width: 400px;
+                text-align: center;
+                border-radius: 15px; /* جعل كل الحواف دائرية عندما تكون ثابتة */
+                transform: none; /* إلغاء أي تحويلات */
+                padding: clamp(15px, 3vw, 25px);
+                font-size: clamp(14px, 3.5vw, 16px);
+            }
+
+            #rankingBox h3 {
+                text-align: center;
+                font-size: clamp(18px, 4.5vw, 22px);
+            }
+
+            .rank {
+                justify-content: center;
+                font-size: clamp(12px, 3vw, 15px);
+            }
+            
+            .modal-content button {
+                font-size: clamp(16px, 4.5vw, 20px); /* تصغير حجم زر المودال على الجوال */
+                padding: clamp(10px, 3vw, 12px) clamp(20px, 5vw, 25px);
+            }
+
+            .player-count-buttons button {
+                flex-basis: 48%; /* زرين في الصف على الشاشات الصغيرة */
+                font-size: clamp(16px, 4vw, 20px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .teams {
+                grid-template-columns: 1fr !important; /* عمود واحد على الجوالات */
+                max-width: 300px; /* تقليل العرض الأقصى للفرق */
+            }
+            .player-count-buttons button {
+                flex-basis: 100%; /* زر واحد في الصف على الجوالات الأصغر */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-popup" class="popup-overlay">
+        <div class="modal-content">
+            <h2>أهلاً بك في حاسبة النقاط!</h2>
+            <img src="https://raw.githubusercontent.com/pointscalculator/pointscalculator/main/calcolater-removebg-preview.png" alt="شعار اللعبة">
+            <button onclick="showPlayerCountModal()">التالي</button>
+        </div>
+    </div>
+
+    <div class="notice-bar">
+        <div class="notice-content">
+            <span class="red">ملاحظة:</span> <span class="brown">هذه النسخه لشخص واحد فقط وغير قابله للنشر او البيع ومن يخالف ذلك سيتم اتخاذ الإجراءات القانونيه في هذا الأمر وللتذكير بذمتك وأمانتك:<br>"قال ﷺ "لا إيمان لمن لا أمانة له، ولا دين لمن لا عهد له"</span>
+        </div>
+    </div>
+
+    <div id="rankingBox">
+        <h3>ترتيب المراكز:</h3>
+        <div id="ranks"></div>
+    </div>
+
+    <div class="teams" id="teamsContainer"></div>
+
+    <button id="resetBtn">إعادة تعيين</button>
+    <button id="editNamesBtn" onclick="editTeamNames()">تعديل أسماء الفرق</button>
+
+    <div id="modalPlayerCount" class="popup-overlay"> <div class="modal-content">
+            <h2>حدد عدد اللاعبين</h2>
+            <div class="player-count-buttons">
+                <button onclick="setPlayerCount(3)">3 فرق</button>
+                <button onclick="setPlayerCount(4)">4 فرق</button>
+                <button onclick="setPlayerCount(6)">6 فرق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal1" class="popup-overlay"> <div class="modal-content">
+            <span class="close-btn" onclick="startGame()">&times;</span>
+            <h2>نصائح اللعبة</h2>
+            <p style="text-align: right;">نصيحه علشان نلعب ونستانس… بس بدون ما ننسى الأهم 🌙<br><br>
+                1. ⏰ "اللعب ممتع، بس خلّه بعد الصلاة، عشان ما تضيع عليك لا متعة ولا أجر."<br>
+                2. 📖 "اللعبة حلوة، بس القرآن أحلى، خذ لك وقت بين الجولات وارتّح مع كلام الله."<br>
+                3. 🙏 "إذا جاء وقت الصلاة، نوقف اللعب ونكسب رضا رب العالمين."<br>
+                4. ✋ "نلعب ونضحك، لكن ما نخلي اللعب يلهينا عن طاعة الله."<br>
+                5. 📚 "اللعب ما يمنع إنك تذاكر، نظّم وقتك وخلّ اللعب مكافأة بعد الإنجاز."<br>
+                6. 🎯 "اللعبة جزء من يومنا، مو كل يومنا… لا تنسى أهدافك وطموحاتك."<br>
+                7. ⌛ "وقت المذاكرة غالي، لا تخليه يضيع على حساب جيم ممكن تلعبه بأي وقت."<br><br>
+                تذكر "إذا لعبت وانت محافظ على صلاتك واذكارك وقراءة القران وخلصت المذاكره والاشغال الي عليك … أنت كسبت الدنيا والآخرة بأذن الله"
+            </p>
+            <button onclick="startGame()">بدء اللعب</button>
+        </div>
+    </div>
+
+    <script>
+        // تعريف أسماء الفرق والنقاط الأولية (سيتم تعديل حجمها بناءً على اختيار اللاعب)
+        let teamNames = [];
+        let scores = [];
+
+        // جلب عناصر HTML
+        const container = document.getElementById('teamsContainer');
+        const ranksDiv = document.getElementById('ranks');
+        const welcomePopup = document.getElementById('welcome-popup');
+        const modal1 = document.getElementById('modal1');
+        const modalPlayerCount = document.getElementById('modalPlayerCount');
+        const noticeBar = document.querySelector('.notice-bar');
+        const rankingBox = document.getElementById('rankingBox');
+
+        // الألوان الجديدة لمربعات الفرق (أغمق وأكثر تباينًا)
+        const teamColors = [
+            '#4CAF50', // أخضر زمردي
+            '#FF69B4', // وردي (تم استبدال الأزرق الفيروزي به)
+            '#9C27B0', // بنفسجي خزامي داكن
+            '#F44336', // أحمر ياقوتي
+            '#FF9800', // كهرماني داكن
+            '#00BCD4'  // أزرق سماوي عميق (اللون الأزرق الآخر)
+        ];
+
+        // وظائف إظهار وإخفاء النوافذ المنبثقة
+        function showPopup(popupElement) {
+            popupElement.classList.add('active');
+        }
+
+        function hidePopup(popupElement) {
+            popupElement.classList.remove('active');
+        }
+
+        // تسلسل ظهور النوافذ عند بدء التشغيل
+        function showPlayerCountModal() {
+            hidePopup(welcomePopup);
+            showPopup(modalPlayerCount);
+        }
+
+        // دالة لتحديد عدد اللاعبين وتهيئة اللعبة
+        function setPlayerCount(count) {
+            teamNames = Array(count).fill().map((_, i) => `الفريق ${i + 1}`);
+            scores = Array(count).fill(0);
+
+            // تحديد تخطيط الشبكة بناءً على عدد الفرق
+            if (count === 3) {
+                container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            } else if (count === 4) {
+                container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            } else if (count === 6) {
+                container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            }
+
+            hidePopup(modalPlayerCount); // إخفاء نافذة تحديد اللاعبين
+            showPopup(modal1); // إظهار نافذة النصائح
+            renderTeams(); // رسم الفرق بناءً على العدد الجديد
+            updateRanks(); // تحديث لوحة الترتيب
+            rankingBox.classList.add('active'); // إظهار لوحة الترتيب
+        }
+
+        // دالة لرسم الفرق على الشاشة
+        function renderTeams() {
+            container.innerHTML = ''; // مسح المحتوى الحالي
+
+            scores.forEach((score, i) => {
+                const div = document.createElement('div');
+                div.className = 'team';
+                // تعيين لون الخلفية من مصفوفة teamColors
+                div.style.backgroundColor = teamColors[i % teamColors.length]; // استخدام المعامل % لضمان عدم تجاوز طول المصفوفة
+
+                const name = document.createElement('div');
+                name.className = 'team-name';
+                name.innerText = teamNames[i];
+                div.appendChild(name);
+
+                // Score display
+                const currentScoreDisplay = document.createElement('div');
+                currentScoreDisplay.className = 'current-score';
+                currentScoreDisplay.innerText = scores[i]; // Display the current score
+                div.appendChild(currentScoreDisplay);
+
+                // Buttons container
+                const scoreButtonsDiv = document.createElement('div');
+                scoreButtonsDiv.className = 'score-buttons';
+
+                // Minus button
+                const minusButton = document.createElement('button');
+                minusButton.className = 'score-btn'; // تم إزالة فئة 'minus' لجعل اللون مطابقًا
+                minusButton.innerText = '-';
+                minusButton.onclick = () => {
+                    scores[i] = Math.max(0, scores[i] - 1); // Decrease score, but not below zero
+                    renderTeams(); // Re-render teams to update scores
+                    updateRanks(); // Update ranking board
+                };
+                scoreButtonsDiv.appendChild(minusButton);
+
+                // Plus button
+                const plusButton = document.createElement('button');
+                plusButton.className = 'score-btn';
+                plusButton.innerText = '+';
+                plusButton.onclick = () => {
+                    scores[i]++; // Increase score
+                    renderTeams(); // Re-render teams to update scores
+                    updateRanks(); // Update ranking board
+                };
+                scoreButtonsDiv.appendChild(plusButton);
+
+                div.appendChild(scoreButtonsDiv);
+                container.appendChild(div);
+            });
+        }
+
+        // دالة لتحديث لوحة ترتيب المراكز (أول 3 مراكز فقط)
+        function updateRanks() {
+            const scorePairs = scores.map((s, i) => ({ team: teamNames[i], score: s }));
+            // فرز الفرق تنازلياً حسب النقاط
+            scorePairs.sort((a, b) => b.score - a.score);
+
+            // عرض أول 3 مراكز فقط
+            ranksDiv.innerHTML = scorePairs.slice(0, 3).map((s, i) => {
+                let medal = '';
+                if (i === 0) medal = '🥇';
+                else if (i === 1) medal = '🥈';
+                else if (i === 2) medal = '🥉';
+                return `<div class="rank"><span class="medal">${medal}</span> ${s.team} - ${s.score}</div>`;
+            }).join('');
+        }
+
+        // حدث النقر على زر إعادة التعيين
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            // إخفاء جميع محتويات اللعبة وإظهار نافذة تحديد عدد اللاعبين
+            container.innerHTML = ''; // إزالة الفرق
+            ranksDiv.innerHTML = ''; // إزالة لوحة الترتيب
+            hidePopup(modal1);
+            hidePopup(rankingBox); // إخفاء لوحة الترتيب
+            showPopup(modalPlayerCount); // العودة لنافذة تحديد عدد اللاعبين
+        });
+
+        // دالة لتعديل أسماء الفرق
+        function editTeamNames() {
+            teamNames = teamNames.map((name, i) => {
+                // استخدام prompt لطلب اسم جديد، أو الاحتفاظ بالاسم القديم إذا تم الإلغاء
+                const newName = prompt(`أدخل اسم الفريق ${i + 1}:`, name);
+                return newName === null ? name : newName; // إذا ضغط المستخدم على إلغاء، احتفظ بالاسم القديم
+            });
+            renderTeams(); // إعادة رسم الفرق بأسماء جديدة
+            updateRanks(); // تحديث لوحة الترتيب
+        }
+
+        // دالة لبدء اللعبة (إخفاء النافذة المنبثقة)
+        function startGame() {
+            hidePopup(modal1);
+        }
+
+        // دالة لإنشاء أيقونات حاسبة موزعة بشكل خطوط قطرية
+        function createCalculatorIconsDiagonal() {
+            // إزالة أي أيقونات موجودة مسبقًا لتجنب التكرار
+            document.querySelectorAll('.calculator-icon').forEach(icon => icon.remove());
+
+            const bodyWidth = document.body.clientWidth;
+            const bodyHeight = document.body.clientHeight;
+            const iconSize = 40; // حجم الأيقونة بالبكسل (محدد في CSS)
+            const spacing = 60; // المسافة بين الأيقونات على طول الخط القطري
+            const lineOffset = 100; // المسافة بين الخطوط القطرية المتوازية
+            const padding = 50; // هامش من الحواف
+
+            // لحساب عدد الخطوط القطرية اللازمة لتغطية الشاشة
+            const totalLength = bodyWidth + bodyHeight; // أقصى طول قطري ممكن
+            const numberOfLines = Math.ceil(totalLength / lineOffset);
+
+            for (let i = 0; i < numberOfLines; i++) {
+                // تحديد نقطة بداية لكل خط قطري
+                let startX = -bodyHeight + (i * lineOffset);
+                let startY = bodyHeight;
+
+                // الآن نرسم الأيقونات على طول هذا الخط القطري
+                for (let j = 0; ; j++) {
+                    const xPos = startX + j * spacing;
+                    const yPos = startY - j * spacing;
+
+                    // التوقف إذا خرجت الأيقونة عن حدود الشاشة
+                    if (xPos > bodyWidth + padding || yPos < -padding) {
+                        break;
+                    }
+
+                    // وضع الأيقونة فقط إذا كانت داخل حدود الشاشة المرئية تقريباً
+                    if (xPos >= -iconSize && xPos <= bodyWidth && yPos >= -iconSize && yPos <= bodyHeight) {
+                        const icon = document.createElement('span');
+                        icon.classList.add('calculator-icon');
+                        icon.innerHTML = '🧮'; // رمز الحاسبة الجديد
+
+                        icon.style.left = `${xPos}px`;
+                        icon.style.top = `${yPos}px`;
+
+                        document.body.appendChild(icon);
+                    }
+                }
+            }
+        }
+
+        // عند تحميل الصفحة
+        window.onload = () => {
+            // إظهار نافذة الترحيب أولاً
+            showPopup(welcomePopup);
+
+            // إنشاء أيقونات الحاسبة الموزعة قطرياً عند التحميل
+            createCalculatorIconsDiagonal();
+
+            // إضافة مستمع لحدث تغيير حجم الشاشة لإعادة رسم الأيقونات
+            window.addEventListener('resize', createCalculatorIconsDiagonal);
+        };
+    </script>
+</body>
+</html>
