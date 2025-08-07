@@ -113,14 +113,11 @@
             justify-content: center;
         }
 
-        /* تم إزالة .score-btn.minus لتوحيد اللون */
         .score-btn:hover {
             background-color: #385E5D; /* استخدام اللون الأزرق الغامق الجديد عند التحويم */
             transform: translateY(-3px);
             color: white; /* تغيير لون النص عند التحويم لزر الزيادة */
         }
-
-        /* تم إزالة .score-btn.minus:hover لتوحيد اللون */
 
         .score-btn:active {
             transform: translateY(0);
@@ -203,7 +200,7 @@
         }
 
         /* النوافذ المنبثقة (Modal) */
-        .popup-overlay { /* تم تغيير الاسم ليتناسب مع نافذة الترحيب */
+        .popup-overlay {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -212,7 +209,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(0,0,0,0.8); /* خلفية أغمق للمودال */
+            background-color: transparent; /* تم تغييرها إلى شفاف */
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
@@ -344,7 +341,7 @@
 
         /* نافذة الترحيب الجديدة */
         #welcome-popup {
-            background-color: rgba(0,0,0,0.9); /* خلفية داكنة جداً للترحيب */
+            background-color: transparent; /* تم تغييرها إلى شفاف */
         }
         #welcome-popup .modal-content {
             background-color: #FFFFFF; /* لون خلفية بيضاء لنافذة الترحيب فقط */
